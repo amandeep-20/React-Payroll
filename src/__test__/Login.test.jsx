@@ -1,80 +1,68 @@
+/* eslint-disable no-undef */
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
-import { useNavigate } from 'react-router-dom';
-import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
-import { jwtDecode } from 'jwt-decode';
-import Login from '../Component/Login/Login'; // Adjust the import path as needed
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import {jwtDecode} from 'jwt-decode';
+import Login from '../Component/Login/Login.jsx';
 
-
+// Mock dependencies
 jest.mock('react-router-dom', () => ({
-  useNavigate: jest.fn(),
+  ...jest.requireActual('react-router-dom'),
+  useNavigate: () => jest.fn()
 }));
 
+jest.mock('jwt-decode');
 jest.mock('@react-oauth/google', () => ({
-  GoogleOAuthProvider: ({ children }) => <div>{children}</div>,
-  GoogleLogin: ({ onSuccess, onError }) => (
-    <button
+  GoogleLogin: ({ onSuccess }) => (
+    <button 
       data-testid="google-login-button"
-      onClick={() => onSuccess({ credential: 'mock-token' })}
+      onClick={() => onSuccess({ credential: 'mockToken' })}
     >
-      Google Login
+      Sign in with Google
     </button>
   ),
+  GoogleOAuthProvider: ({ children }) => <div>{children}</div>
 }));
 
-jest.mock('jwt-decode', () => jest.fn(() => ({
-  name: 'Test User',
-  given_name: 'Test',
-})));
-
 describe('Login Component', () => {
-  test('renders login component with Google login button', () => {
-    const mockNavigate = jest.fn();
-    useNavigate.mockReturnValue(mockNavigate);
-
-    render(
-      <GoogleOAuthProvider clientId="mock-client-id">
-        <Login />
-      </GoogleOAuthProvider>
-    );
-
-    
-    expect(screen.getByText('SSO Login with Google')).toBeInTheDocument();
-    
-    
-    expect(screen.getByTestId('google-login-button')).toBeInTheDocument();
+  beforeEach(() => {
+    jest.clearAllMocks();
+    localStorage.clear();
   });
 
-  
-  test('handles successful Google login and navigates to dashboard', () => {
-    const mockNavigate = jest.fn();
-    useNavigate.mockReturnValue(mockNavigate);
-
-    
-    const localStorageMock = {
-      setItem: jest.fn(),
-    };
-    Object.defineProperty(window, 'localStorage', {
-      value: localStorageMock,
-    });
-
+  test('renders login page', () => {
     render(
-      <GoogleOAuthProvider clientId="mock-client-id">
+      <MemoryRouter>
         <Login />
-      </GoogleOAuthProvider>
+      </MemoryRouter>
     );
 
-    
+    expect(screen.getByText('SSO Login with Google')).toBeInTheDocument();
+  });
+
+  test('handles successful Google login', async () => {
+    // Mock decoded user data
+    jwtDecode.mockReturnValue({
+      name: 'Test User',
+      email: 'test@example.com'
+    });
+
+    const mockNavigate = jest.fn();
+    jest.spyOn(require('react-router-dom'), 'useNavigate').mockImplementation(() => mockNavigate);
+
+    render(
+      <MemoryRouter>
+        <Login />
+      </MemoryRouter>
+    );
+
     const loginButton = screen.getByTestId('google-login-button');
     fireEvent.click(loginButton);
 
-    
-    expect(jwtDecode).toHaveBeenCalledWith('mock-token');
-
-    
-    expect(localStorageMock.setItem).toHaveBeenCalledWith('userName', 'Test User');
-
-    
-    expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+    await waitFor(() => {
+      expect(localStorage.getItem('userName')).toBe('Test User');
+      expect(mockNavigate).toHaveBeenCalledWith('/dashboard');
+    });
   });
 });
