@@ -31,6 +31,11 @@ describe('Dashboard Component', () => {
     renderWithRouter(<Dashboard />);
     expect(screen.getByText('Loading employees...')).toBeInTheDocument();
   });
+  
+  test('check for heading',()=>{
+    render(<Dashboard/>),
+    expect(screen.getByText(/employee details/i)).toBeInTheDocument();
+  })
 
   test('renders employee list successfully', async () => {
     const mockEmployees = [
