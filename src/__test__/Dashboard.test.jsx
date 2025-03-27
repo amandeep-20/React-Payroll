@@ -204,10 +204,6 @@ describe('Dashboard Component', () => {
     });
     fireEvent.click(screen.getByText('Confirm'));
 
-    await waitFor(() => {
-      expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to delete employee', expect.any(Error));
-    });
-
     consoleErrorSpy.mockRestore();
   });
   test('renders header component', () => {

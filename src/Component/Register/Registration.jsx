@@ -165,7 +165,7 @@ class Registration extends Component {
                       { value: '/Assets/person4.jpeg', src: person4 },
                     ].map((img, index) => (
                       <label
-                        key={img.value} // Changed to img.value for uniqueness
+                        key={img.value} 
                         className="flex items-center gap-2 cursor-pointer hover:bg-gray-100 p-2 rounded-lg transition-all duration-300"
                       >
                         <input
